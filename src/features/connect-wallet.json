@@ -1,0 +1,29 @@
+{
+  "name": "connect-wallet",
+  "description": "Solana wallet connection components and utilities",
+  "dependencies": [
+    "@solana/wallet-adapter-react",
+    "@solana/wallet-adapter-react-ui",
+    "class-variance-authority",
+    "clsx",
+    "tailwind-merge"
+  ],
+  "files": [
+    {
+      "source": "source/components/connect-wallet",
+      "target": "components/connect-wallet"
+    },
+    {
+      "source": "source/lib/connect-wallet",
+      "target": "lib/connect-wallet"
+    },
+    {
+      "source": "source/utils/connect-wallet",
+      "target": "utils/connect-wallet"
+    },
+    {
+      "source": "source/provider/connect-wallet",
+      "target": "provider/connect-wallet"
+    }
+  ]
+}

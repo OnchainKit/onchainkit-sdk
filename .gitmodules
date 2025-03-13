@@ -1,0 +1,3 @@
+[submodule "src/source/solana-agent-kit"]
+	path = src/source/solana-agent-kit
+	url = https://github.com/sendaifun/solana-agent-kit

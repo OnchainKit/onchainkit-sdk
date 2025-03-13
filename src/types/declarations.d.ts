@@ -44,3 +44,9 @@ declare module 'clsx' {
   export const clsx: (...inputs: any[]) => string;
   export type ClassValue = any;
 }
+
+
+// Add path aliases
+declare module '@onchainkit/source/*' {
+  export * from '../source/*';
+}

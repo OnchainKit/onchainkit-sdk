@@ -6,6 +6,7 @@ import * as path from 'path';
 import prompts from 'prompts';
 import chalk from 'chalk';
 import * as glob from 'glob';
+import { FeatureConfig } from './types';
 
 const program = new Command();
 
@@ -14,47 +15,43 @@ program
   .version('0.1.0')
   .description('OnchainKit SDK - Add components and utilities to your project');
 
+// Function to load feature configuration
+async function loadFeatureConfig(featureName: string): Promise<FeatureConfig> {
+  const configPath = path.join(__dirname, '../features', `${featureName}.json`);
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`Feature "${featureName}" not found.`);
+  }
+  return fs.readJSON(configPath);
+}
+
 // Command to add a component
 program
-  .command('add <component>')
-  .description('Add a component to your project')
-  .option('-d, --dir <directory>', 'The destination directory to copy the component to', './components')
-  .action(async (component: string, options: { dir: string }) => {
+  .command('add <feature>')
+  .description('Add a feature to your project')
+  .action(async (feature: string) => {
     try {
-      // Process special case for connect-wallet
-      if (component === 'connect-wallet') {
-        console.log(chalk.blue('Installing connect-wallet components and dependencies...'));
+      // Load feature configuration
+      const config: FeatureConfig = await loadFeatureConfig(feature);
+      console.log(chalk.blue(`Installing ${config.name} components and dependencies...`));
+      
+      // Path to the root directory of the user's project
+      const projectRoot = process.cwd();
+      const sdkSrcDir = path.join(__dirname, '../../src');
+      
+      // Process each file in the feature configuration
+      for (const file of config.files) {
+        const srcPath = path.join(sdkSrcDir, file.source);
+        const targetPath = path.join(projectRoot, file.target);
         
-        // Path to the root directory of the user's project
-        const projectRoot = process.cwd();
+        // Ensure target directory exists
+        fs.ensureDirSync(path.dirname(targetPath));
         
-        // The directories to create in the user's project
-        const userComponentsDir = path.join(projectRoot, 'components');
-        const userLibDir = path.join(projectRoot, 'lib');
-        const userUtilsDir = path.join(projectRoot, 'utils');
-        const userProviderDir = path.join(projectRoot, 'provider');
-        
-        // Ensure the directories exist
-        fs.ensureDirSync(userComponentsDir);
-        fs.ensureDirSync(userLibDir);
-        fs.ensureDirSync(userUtilsDir);
-        fs.ensureDirSync(userProviderDir);
-        
-        // Check if the connect-wallet directories exist in the user's project
-        const userConnectWalletComponentDir = path.join(userComponentsDir, 'connect-wallet');
-        const userConnectWalletLibDir = path.join(userLibDir, 'connect-wallet');
-        const userConnectWalletUtilsDir = path.join(userUtilsDir, 'connect-wallet');
-        
-        // Check and ask the user before overwriting
-        if (fs.existsSync(userConnectWalletComponentDir) || 
-            fs.existsSync(userConnectWalletLibDir) || 
-            fs.existsSync(userConnectWalletUtilsDir) || 
-            fs.existsSync(path.join(userProviderDir, 'wallet-provider.tsx'))) {
-          
+        // Check if files already exist
+        if (fs.existsSync(targetPath)) {
           const { overwrite } = await prompts({
             type: 'confirm',
             name: 'overwrite',
-            message: 'Some connect-wallet files already exist in your project. Do you want to overwrite them?',
+            message: `Some ${config.name} files already exist in your project. Do you want to overwrite them?`,
             initial: false
           });
 
@@ -64,104 +61,30 @@ program
           }
         }
         
-        // Path to the src directory in the SDK
-        const sdkSrcDir = path.join(__dirname, '../../src');
-        
-        // Copy the components/connect-wallet files
-        const srcComponentsDir = path.join(sdkSrcDir, 'components/connect-wallet');
-        if (fs.existsSync(srcComponentsDir)) {
-          fs.copySync(srcComponentsDir, userConnectWalletComponentDir);
-          console.log(chalk.green('Added connect-wallet components to ./components/connect-wallet'));
+        // Copy files
+        if (fs.existsSync(srcPath)) {
+          if (fs.statSync(srcPath).isDirectory()) {
+            fs.copySync(srcPath, targetPath);
+          } else {
+            fs.copySync(srcPath, targetPath);
+          }
+          console.log(chalk.green(`Added ${file.target}`));
         }
-        
-        // Copy the lib/connect-wallet files
-        const srcLibDir = path.join(sdkSrcDir, 'lib/connect-wallet');
-        if (fs.existsSync(srcLibDir)) {
-          fs.copySync(srcLibDir, userConnectWalletLibDir);
-          console.log(chalk.green('Added connect-wallet utils to ./lib/connect-wallet'));
-        }
-        
-        // Copy the utils/connect-wallet files
-        const srcUtilsDir = path.join(sdkSrcDir, 'utils/connect-wallet');
-        if (fs.existsSync(srcUtilsDir)) {
-          fs.copySync(srcUtilsDir, userConnectWalletUtilsDir);
-          console.log(chalk.green('Added connect-wallet utils to ./utils/connect-wallet'));
-        }
-        
-        // Copy the provider/wallet-provider.tsx file
-        const srcProviderFile = path.join(sdkSrcDir, 'provider/wallet-provider.tsx');
-        if (fs.existsSync(srcProviderFile)) {
-          fs.copySync(srcProviderFile, path.join(userProviderDir, 'wallet-provider.tsx'));
-          console.log(chalk.green('Added wallet-provider.tsx to ./provider/'));
-        }
-        
-        console.log(chalk.green('Successfully installed connect-wallet components and dependencies!'));
-        console.log(chalk.yellow('Note: You need to install the following dependencies:'));
-        console.log(chalk.yellow('npm install @solana/wallet-adapter-react @solana/wallet-adapter-react-ui class-variance-authority clsx'));
-        
-        return;
       }
       
-      // Process the normal case for other components
-      const componentPath = path.join(__dirname, '../components', component);
-      const targetDir = path.resolve(process.cwd(), options.dir);
-
-      // Check if the component exists
-      if (!fs.existsSync(componentPath)) {
-        console.error(chalk.red(`Component "${component}" not found.`));
-        console.log(chalk.yellow('Available components:'));
-        
-        // List all available components
-        const availableComponents = glob.sync('*', { cwd: path.join(__dirname, '../components') });
-        availableComponents.forEach(comp => {
-          console.log(chalk.green(`- ${comp}`));
-        });
-        
-        return;
+      // Display dependencies message
+      if (config.dependencies && config.dependencies.length > 0) {
+        console.log(chalk.yellow('\nNote: You need to install the following dependencies:'));
+        console.log(chalk.yellow(`npm install ${config.dependencies.join(' ')}`));
       }
-
-      // Check if the destination directory exists
-      if (!fs.existsSync(targetDir)) {
-        const { confirm } = await prompts({
-          type: 'confirm',
-          name: 'confirm',
-          message: `The directory "${options.dir}" does not exist. Do you want to create it?`,
-          initial: true
-        });
-
-        if (confirm) {
-          fs.mkdirSync(targetDir, { recursive: true });
-          console.log(chalk.green(`The directory "${options.dir}" has been created.`));
-        } else {
-          console.log(chalk.yellow('The operation has been cancelled.'));
-          return;
-        }
-      }
-
-      // Check if the component already exists in the destination directory
-      const targetPath = path.join(targetDir, component);
-      if (fs.existsSync(targetPath)) {
-        const { overwrite } = await prompts({
-          type: 'confirm',
-          name: 'overwrite',
-          message: `Component "${component}" already exists. Do you want to overwrite it?`,
-          initial: false
-        });
-
-        if (!overwrite) {
-          console.log(chalk.yellow('The operation has been cancelled.'));
-          return;
-        }
-      }
-
-      // Copy component to the destination directory
-      fs.copySync(componentPath, targetPath);
-      console.log(chalk.green(`The component "${component}" has been added to "${options.dir}".`));
+      
+      console.log(chalk.green(`\nSuccessfully installed ${config.name}!`));
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(chalk.red(`Error: ${errorMessage}`));
     }
-  });
+  }
+);
 
 // Command to list all available components and utilities
 program
@@ -207,142 +130,88 @@ program
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(chalk.red(`Error: ${errorMessage}`));
     }
-  });
+  }
+);
 
-// Command to add a utility
-program
-  .command('add-util <utility>')
-  .description('Add a utility to your project')
-  .option('-d, --dir <directory>', 'The destination directory to copy the utility to', './utils')
-  .action(async (utility: string, options: { dir: string }) => {
-    try {
-      const utilityPath = path.join(__dirname, '../utils', utility);
-      const targetDir = path.resolve(process.cwd(), options.dir);
+// Function to check and remove empty directories recursively if they are part of the feature
+async function removeEmptyDirectories(dirPath: string, featureConfig: FeatureConfig): Promise<void> {
+  try {
+    const stats = await fs.stat(dirPath);
+    if (!stats.isDirectory()) return;
 
-      // Check if the utility exists
-      if (!fs.existsSync(utilityPath)) {
-        console.error(chalk.red(`Utility "${utility}" not found.`));
-        console.log(chalk.yellow('Available utilities:'));
-        
-        // List all available utilities
-        const availableUtils = glob.sync('*', { cwd: path.join(__dirname, '../utils') });
-        availableUtils.forEach(util => {
-          console.log(chalk.green(`- ${util}`));
-        });
-        
-        return;
-      }
+    // Check if this directory is part of the feature configuration
+    const isFeatureDirectory = featureConfig.files.some(file => {
+      const targetDir = path.dirname(file.target);
+      return dirPath.includes(targetDir);
+    });
 
-      // Check if the destination directory exists
-      if (!fs.existsSync(targetDir)) {
-        const { confirm } = await prompts({
-          type: 'confirm',
-          name: 'confirm',
-          message: `The directory "${options.dir}" does not exist. Do you want to create it?`,
-          initial: true
-        });
+    if (!isFeatureDirectory) return;
 
-        if (confirm) {
-          fs.mkdirSync(targetDir, { recursive: true });
-          console.log(chalk.green(`The directory "${options.dir}" has been created.`));
-        } else {
-          console.log(chalk.yellow('The operation has been cancelled.'));
-          return;
+    let files = await fs.readdir(dirPath);
+    
+    // Process subdirectories first
+    for (const file of files) {
+      const fullPath = path.join(dirPath, file);
+      try {
+        const stat = await fs.stat(fullPath);
+        if (stat.isDirectory()) {
+          await removeEmptyDirectories(fullPath, featureConfig);
         }
+      } catch (error) {
+        // Ignore errors for individual files/directories
       }
-
-      // Check if the utility already exists in the destination directory
-      const targetPath = path.join(targetDir, utility);
-      if (fs.existsSync(targetPath)) {
-        const { overwrite } = await prompts({
-          type: 'confirm',
-          name: 'overwrite',
-          message: `Utility "${utility}" already exists. Do you want to overwrite it?`,
-          initial: false
-        });
-
-        if (!overwrite) {
-          console.log(chalk.yellow('The operation has been cancelled.'));
-          return;
-        }
-      }
-
-      // Copy utility to the destination directory
-      fs.copySync(utilityPath, targetPath);
-      console.log(chalk.green(`The utility "${utility}" has been added to "${options.dir}".`));
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(chalk.red(`Error: ${errorMessage}`));
     }
-  });
+
+    // Check again after processing subdirectories
+    files = await fs.readdir(dirPath);
+    if (files.length === 0) {
+      await fs.remove(dirPath);
+      console.log(chalk.yellow(`Removed empty directory: ${dirPath}`));
+    }
+  } catch (error) {
+    // Ignore errors when checking directories
+  }
+}
 
 // Command to remove a component
 program
-  .command('remove <component>')
-  .description('Remove a component and related files from your project')
-  .action(async (component: string) => {
+  .command('remove <feature>')
+  .description('Remove a feature and related files from your project')
+  .action(async (feature: string) => {
     try {
-      // Handle the special case for connect-wallet
-      if (component === 'connect-wallet') {
-        console.log(chalk.blue('Removing connect-wallet component and related files...'));
-        
-        // Path to the root directory of the user's project
-        const projectRoot = process.cwd();
-        
-        // The paths to the directories to remove
-        const connectWalletComponentDir = path.join(projectRoot, 'components/connect-wallet');
-        const connectWalletLibDir = path.join(projectRoot, 'lib/connect-wallet');
-        const connectWalletUtilsDir = path.join(projectRoot, 'utils/connect-wallet');
-        const walletProviderFile = path.join(projectRoot, 'provider/wallet-provider.tsx');
-        
-        // Check if the directories/files exist
-        const filesToRemove = [];
-        if (fs.existsSync(connectWalletComponentDir)) filesToRemove.push(connectWalletComponentDir);
-        if (fs.existsSync(connectWalletLibDir)) filesToRemove.push(connectWalletLibDir);
-        if (fs.existsSync(connectWalletUtilsDir)) filesToRemove.push(connectWalletUtilsDir);
-        if (fs.existsSync(walletProviderFile)) filesToRemove.push(walletProviderFile);
-        
-        if (filesToRemove.length === 0) {
-          console.log(chalk.yellow('No connect-wallet files found in your project.'));
-          return;
-        }
-        
-        // Confirm with the user before deleting
-        const { confirm } = await prompts({
-          type: 'confirm',
-          name: 'confirm',
-          message: 'Are you sure you want to delete the connect-wallet files?',
-          initial: false
+      // Load feature configuration
+      const config = await loadFeatureConfig(feature);
+      console.log(chalk.blue(`Removing ${config.name} files...`));
+      
+      // Path to the root directory of the user's project
+      const projectRoot = process.cwd();
+      
+      // Check if any of the feature files exist
+      interface FeatureFile {
+        source: string;
+        target: string;
+      }
+
+      const filesToRemove = config.files
+        .map((file: FeatureFile) => path.join(projectRoot, file.target))
+        .filter((filePath: string) => {
+          try {
+            return fs.existsSync(filePath) || fs.existsSync(path.dirname(filePath));
+          } catch {
+            return false;
+          }
         });
-        
-        if (!confirm) {
-          console.log(chalk.yellow('Operation cancelled.'));
-          return;
-        }
-        
-        // Proceed with deletion
-        console.log(chalk.yellow('Deleting the following files:'));
-        for (const file of filesToRemove) {
-          console.log(chalk.yellow(`- ${file}`));
-          fs.removeSync(file);
-        }
-        
-        console.log(chalk.green('Successfully removed connect-wallet files!'));
+      
+      if (filesToRemove.length === 0) {
+        console.log(chalk.yellow(`No ${config.name} files found in your project.`));
         return;
       }
       
-      // Handle the normal case for other components
-      const componentDir = path.join(process.cwd(), 'components', component);
-      
-      if (!fs.existsSync(componentDir)) {
-        console.log(chalk.yellow(`Component "${component}" does not exist in your project.`));
-        return;
-      }
-      
+      // Confirm with the user before deleting
       const { confirm } = await prompts({
         type: 'confirm',
         name: 'confirm',
-        message: `Are you sure you want to delete the component "${component}"?`,
+        message: `Are you sure you want to delete the ${config.name} files?`,
         initial: false
       });
       
@@ -351,8 +220,25 @@ program
         return;
       }
       
-      fs.removeSync(componentDir);
-      console.log(chalk.green(`Successfully removed component "${component}"!`));
+      // Proceed with deletion
+      console.log(chalk.yellow('Deleting the following files:'));
+      for (const file of filesToRemove) {
+        try {
+          console.log(chalk.yellow(`- ${file}`));
+          fs.removeSync(file);
+          
+          // Clean up empty parent directories that are part of the feature
+          let currentDir = path.dirname(file);
+          while (currentDir !== projectRoot) {
+            await removeEmptyDirectories(currentDir, config);
+            currentDir = path.dirname(currentDir);
+          }
+        } catch (error) {
+          console.log(chalk.yellow(`Failed to remove ${path.relative(projectRoot, file)}`));
+        }
+      }
+      
+      console.log(chalk.green(`Successfully removed ${config.name} files!`));
       
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -361,4 +247,4 @@ program
   });
 
 // Start the CLI
-program.parse(process.argv); 
+program.parse(process.argv);

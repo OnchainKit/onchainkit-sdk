@@ -16,14 +16,12 @@
     "outDir": "dist",
     "rootDir": "src",
     "noEmitOnError": false,
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "baseUrl": ".",
+    "paths": {
+      "@onchainkit/source/*": ["src/source/*"]
+    }
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "templates"
-  ]
-} 
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "src/source/solana-agent-kit/**/*"]
+}
