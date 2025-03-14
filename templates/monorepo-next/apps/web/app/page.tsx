@@ -1,16 +1,23 @@
 'use client';
 
-import { WalletProvider } from '../provider/wallet-provider';
-import ConnectWallet from '../components/connect-wallet/connect-wallet';
+import { WalletProvider } from '../provider/connect-wallet/wallet-provider';
+import dynamic from 'next/dynamic';
+import "@solana/wallet-adapter-react-ui/styles.css";
+import './page.css';
+
+const ConnectWallet = dynamic(
+  () => import('../components/connect-wallet/connect-wallet'),
+  { ssr: false }
+);
 
 export default function Home() {
   return (
-    <>
-        <WalletProvider>
-        <main className="flex min-h-screen flex-col items-center justify-between p-24">
-            <ConnectWallet />
-        </main>
-        </WalletProvider>
-    </>
+    <WalletProvider>
+      <main className="main-container">
+        <div className="connect-wallet-container">
+          <ConnectWallet />
+        </div>
+      </main>
+    </WalletProvider>
   );
 }
