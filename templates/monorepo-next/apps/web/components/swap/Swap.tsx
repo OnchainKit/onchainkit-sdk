@@ -115,7 +115,7 @@ const Swap = () => {
       
       // For small SOL balances, ensure we show the value with enough decimal places
       if (tokenInSymbol === 'SOL' && parseFloat(inBalance) > 0) {
-        // Luôn hiển thị SOL với 6 chữ số thập phân nếu có giá trị
+        // Always display SOL with 6 decimal places if it has value
         const formattedSol = parseFloat(inBalance).toFixed(6);
         console.log(`fetchBalances: Reformatted SOL balance: ${formattedSol}`);
         setTokenInBalance(formattedSol);
@@ -136,7 +136,7 @@ const Swap = () => {
       
       // For small SOL balances, ensure we show the value with enough decimal places
       if (tokenOutSymbol === 'SOL' && parseFloat(outBalance) > 0) {
-        // Luôn hiển thị SOL với 6 chữ số thập phân nếu có giá trị
+        // Always display SOL with 6 decimal places if it has value
         const formattedSol = parseFloat(outBalance).toFixed(6);
         console.log(`fetchBalances: Reformatted SOL balance: ${formattedSol}`);
         setTokenOutBalance(formattedSol);

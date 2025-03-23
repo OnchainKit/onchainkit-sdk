@@ -46,20 +46,20 @@ export const ModalContext = createContext<ModalContextState>({
 });
 
 export const WalletProvider = ({ children, ...props }: WalletProviderProps) => {
-  // Thêm state để lưu trữ các endpoint và endpoint hiện tại
+  // Add state to store endpoints and current endpoint
   const [currentEndpointIndex, setCurrentEndpointIndex] = useState(0);
   
-  // Danh sách các public RPC endpoints
+  // List of public RPC endpoints
   const publicRPCs = useMemo(() => [
-    "https://api-mainnet-beta.solflare.network", // Solflare RPC - hoạt động tốt với browser
-    "https://solana-mainnet.g.alchemy.com/v2/demo", // Alchemy Demo endpoint - có CORS support tốt
-    "https://rpc.ankr.com/solana", // Ankr's endpoint - cũng có CORS support
-    "https://api.mainnet-beta.solana.com", // Solana Foundation (chỉ fallback)
+    "https://api-mainnet-beta.solflare.network", // Solflare RPC - works well with browser
+    "https://solana-mainnet.g.alchemy.com/v2/demo", // Alchemy Demo endpoint - good CORS support
+    "https://rpc.ankr.com/solana", // Ankr's endpoint - also has CORS support
+    "https://api.mainnet-beta.solana.com", // Solana Foundation (fallback only)
   ], []);
   
   const defaultNetwork = useMemo(() => props.network || "mainnet-beta", [props.network]);
   
-  // Endpoint được cung cấp sẽ được ưu tiên, nếu không sẽ sử dụng endpoint hiện tại từ danh sách
+  // Provided endpoint will be prioritized, otherwise use the current endpoint from the list
   const endpoint = useMemo(() => {
     if (props.endpoint) {
       return props.endpoint;
@@ -67,7 +67,7 @@ export const WalletProvider = ({ children, ...props }: WalletProviderProps) => {
     return publicRPCs[currentEndpointIndex];
   }, [props.endpoint, publicRPCs, currentEndpointIndex]);
   
-  // Hàm để chuyển đổi sang endpoint tiếp theo khi gặp lỗi
+  // Function to switch to the next endpoint when an error occurs
   const switchToNextEndpoint = useCallback(() => {
     setCurrentEndpointIndex((prevIndex) => {
       const nextIndex = (prevIndex + 1) % publicRPCs.length;
