@@ -1,11 +1,39 @@
-.connect-wallet-container {
-  position: absolute;
-  top: 24px;
-  right: 24px;
-  z-index: 10;
-}
-
 .main-container {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 20px;
+}
+
+.connect-wallet-container {
   width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 20px;
+  margin-bottom: 20px;
+}
+
+.content-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  padding: 0 20px;
+}
+
+.swap-wrapper, .stake-wrapper {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  justify-content: center;
+}
+
+@media (min-width: 1200px) {
+  .content-container {
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+  }
 }

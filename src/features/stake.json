@@ -1,0 +1,17 @@
+{
+  "name": "stake",
+  "description": "Solana stake components and utilities",
+  "dependencies": [
+    "@solana/wallet-adapter-react",
+    "@solana/wallet-adapter-react-ui",
+    "class-variance-authority",
+    "clsx",
+    "tailwind-merge"
+  ],
+  "files": [
+    {
+      "source": "source/components/stake",
+      "target": "components/stake"
+    }
+  ]
+}

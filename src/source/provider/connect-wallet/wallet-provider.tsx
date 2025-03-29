@@ -1,4 +1,4 @@
-import React, { useState, useMemo, createContext } from "react";
+import React, { useState, useMemo, createContext, useCallback } from "react";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import type { Adapter } from "@solana/wallet-adapter-base";
 import {
@@ -30,23 +30,69 @@ interface WalletProviderProps {
 interface ModalContextState {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  endpoint?: string;
+  switchToNextEndpoint: () => void;
+  availableEndpoints: string[];
+  currentEndpointIndex: number;
 }
 
 export const ModalContext = createContext<ModalContextState>({
   isOpen: false,
   setIsOpen: () => null,
+  endpoint: undefined,
+  switchToNextEndpoint: () => null,
+  availableEndpoints: [],
+  currentEndpointIndex: 0,
 });
 
 export const WalletProvider = ({ children, ...props }: WalletProviderProps) => {
-  const endpoint = useMemo(() => props.endpoint || clusterApiUrl(props.network || WalletAdapterNetwork.Devnet), [props.network, props.endpoint]);
+  // Add state to store endpoints and current endpoint
+  const [currentEndpointIndex, setCurrentEndpointIndex] = useState(0);
+  
+  // List of public RPC endpoints
+  const publicRPCs = useMemo(() => [
+    "https://api-mainnet-beta.solflare.network", // Solflare RPC - works well with browser
+    "https://solana-mainnet.g.alchemy.com/v2/demo", // Alchemy Demo endpoint - good CORS support
+    "https://rpc.ankr.com/solana", // Ankr's endpoint - also has CORS support
+    "https://api.mainnet-beta.solana.com", // Solana Foundation (fallback only)
+  ], []);
+  
+  const defaultNetwork = useMemo(() => props.network || "mainnet-beta", [props.network]);
+  
+  // Provided endpoint will be prioritized, otherwise use the current endpoint from the list
+  const endpoint = useMemo(() => {
+    if (props.endpoint) {
+      return props.endpoint;
+    }
+    return publicRPCs[currentEndpointIndex];
+  }, [props.endpoint, publicRPCs, currentEndpointIndex]);
+  
+  // Function to switch to the next endpoint when an error occurs
+  const switchToNextEndpoint = useCallback(() => {
+    setCurrentEndpointIndex((prevIndex) => {
+      const nextIndex = (prevIndex + 1) % publicRPCs.length;
+      console.log(`Switching RPC endpoint from ${publicRPCs[prevIndex]} to ${publicRPCs[nextIndex]}`);
+      return nextIndex;
+    });
+  }, [publicRPCs]);
+  
   const wallets = useMemo(() => props.wallets || [new PhantomWalletAdapter()], [props.wallets]);
   const [isOpen, setIsOpen] = useState(false);
+  
+  console.log(`Using Solana endpoint: ${endpoint} (${currentEndpointIndex + 1}/${publicRPCs.length})`);
 
   return (
     <ConnectionProviderWrapper endpoint={endpoint}>
       <WalletProviderWrapper wallets={wallets} autoConnect>
         <ModalProviderWrapper>
-          <ModalContext.Provider value={{ isOpen, setIsOpen }}>
+          <ModalContext.Provider value={{ 
+            isOpen, 
+            setIsOpen, 
+            endpoint,
+            switchToNextEndpoint,
+            availableEndpoints: publicRPCs,
+            currentEndpointIndex
+          }}>
             {children}
           </ModalContext.Provider>
         </ModalProviderWrapper>

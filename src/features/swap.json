@@ -1,0 +1,33 @@
+{
+  "name": "swap",
+  "description": "Solana swap components and utilities",
+  "dependencies": [
+    "@solana/wallet-adapter-react",
+    "@solana/wallet-adapter-react-ui",
+    "class-variance-authority",
+    "clsx",
+    "tailwind-merge"
+  ],
+  "files": [
+    {
+      "source": "source/components/swap",
+      "target": "components/swap"
+    },
+    {
+      "source": "source/config/swap",
+      "target": "config/swap"
+    },
+    {
+      "source": "source/utils/swap",
+      "target": "utils/swap"
+    },
+    {
+      "source": "source/types/swap",
+      "target": "types/swap"
+    },
+    {
+      "source": "source/constants",
+      "target": "constants"
+    }
+  ]
+}

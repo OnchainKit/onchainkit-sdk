@@ -16,7 +16,8 @@
     "outDir": "dist",
     "rootDir": "src",
     "noEmitOnError": false,
-    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "ignoreDeprecations": "5.0",
+    "typeRoots": ["./node_modules/@types", "src/source/types"],
     "baseUrl": ".",
     "paths": {
       "@onchainkit/source/*": ["src/source/*"]

@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import "@solana/wallet-adapter-react-ui/styles.css";
 import './page.css';
 import SwapComponent from '../components/swap/Swap';
+import StakeComponent from '../components/stake/Stake';
 
 const ConnectWallet = dynamic(
   () => import('../components/connect-wallet/connect-wallet'),
@@ -18,8 +19,13 @@ export default function Home() {
         <div className="connect-wallet-container">
           <ConnectWallet />
         </div>
-        <div className="swap-container">
-          <SwapComponent />
+        <div className="content-container">
+          <div className="swap-wrapper">
+            <SwapComponent />
+          </div>
+          <div className="stake-wrapper">
+            <StakeComponent />
+          </div>
         </div>
       </main>
     </WalletProvider>
