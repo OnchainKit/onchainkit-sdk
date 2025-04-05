@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import './Stake.css';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { Connection, clusterApiUrl } from '@solana/web3.js';
+import { Connection, PublicKey, Transaction, clusterApiUrl, VersionedTransaction } from '@solana/web3.js';
+import { ModalContext } from '../../provider/connect-wallet/wallet-provider';
 
 const Stake = () => {
   const [amountToStake, setAmountToStake] = useState('1');
@@ -11,9 +12,11 @@ const Stake = () => {
   const [solBalance, setSolBalance] = useState('--');
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [currentStage, setCurrentStage] = useState('input'); // input, confirming, success, error
+  const [showManualConfirm, setShowManualConfirm] = useState(false); // Thêm state cho modal xác nhận thủ công
 
   const { connected, publicKey, signTransaction, signAllTransactions } = useWallet();
-  const connection = new Connection(clusterApiUrl('mainnet-beta'), 'confirmed');
+  const { endpoint } = useContext(ModalContext);
+  const connection = new Connection(endpoint || clusterApiUrl('mainnet-beta'), 'confirmed');
 
   // Fetch SOL balance when wallet connects
   useEffect(() => {
@@ -33,6 +36,7 @@ const Stake = () => {
       const balance = await connection.getBalance(publicKey);
       const solBalanceFormatted = (balance / 1_000_000_000).toFixed(6);
       setSolBalance(solBalanceFormatted);
+      console.log(`fetchBalance: SOL balance = ${solBalanceFormatted}`);
     } catch (error) {
       console.error('Error fetching SOL balance:', error);
       setSolBalance('0');
@@ -52,7 +56,6 @@ const Stake = () => {
   // Handle using max balance
   const handleUseMax = () => {
     if (solBalance !== '--' && parseFloat(solBalance) > 0) {
-      // Leave small amount for transaction fees
       const maxAmount = Math.max(parseFloat(solBalance) - 0.01, 0).toFixed(6);
       setAmountToStake(maxAmount);
     }
@@ -70,9 +73,16 @@ const Stake = () => {
       return;
     }
 
-    if (parseFloat(solBalance) < parseFloat(amountToStake)) {
-      setError('Insufficient SOL balance');
-      return;
+    // Kiểm tra số dư SOL, áp dụng cách làm từ component Swap
+    const inputAmount = parseFloat(amountToStake);
+    if (solBalance !== '--' && parseFloat(solBalance) < inputAmount) {
+      // Cho phép chênh lệch rất nhỏ cho SOL (để tính toán phí giao dịch)
+      if (inputAmount - parseFloat(solBalance) < 0.001) {
+        console.log(`Small difference in SOL balance detected, proceeding anyway`);
+      } else {
+        setError('Insufficient SOL balance');
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -80,8 +90,10 @@ const Stake = () => {
     setCurrentStage('confirming');
 
     try {
+      // Sử dụng API route nội bộ thay vì gọi trực tiếp đến Solayer API
+      // để tránh lỗi CORS
       const response = await fetch(
-        `https://app.solayer.org/api/action/restake/ssol?amount=${parseFloat(amountToStake)}`,
+        `/api/solayer/stake?amount=${parseFloat(amountToStake)}`,
         {
           method: "POST",
           headers: {
@@ -100,18 +112,36 @@ const Stake = () => {
 
       const data = await response.json();
 
-      // Deserialize and prepare transaction
+      // Giải mã transaction từ base64
       const txBuffer = Buffer.from(data.transaction, "base64");
-      const tx = window.solana.uiMethods.deserializeTransaction(txBuffer);
-
-      // Sign transaction
-      const signedTx = await window.solana.signTransaction(tx);
       
-      // Send transaction
+      // Tạo VersionedTransaction từ dữ liệu nhận được
+      const tx = VersionedTransaction.deserialize(txBuffer);
+      
+      // Cập nhật blockhash mới nhất
+      const { blockhash } = await connection.getLatestBlockhash();
+      tx.message.recentBlockhash = blockhash;
+      
+      // Ký giao dịch bằng ví người dùng
+      if (!signTransaction) {
+        throw new Error("Wallet does not support signing transactions");
+      }
+      
+      console.log("Signing transaction...");
+      const signedTx = await signTransaction(tx);
+      
+      console.log("Sending transaction...");
       const signature = await connection.sendRawTransaction(signedTx.serialize());
       
-      // Wait for confirmation
-      await connection.confirmTransaction(signature, 'confirmed');
+      console.log("Transaction sent, signature:", signature);
+      
+      // Chờ xác nhận giao dịch
+      const latestBlockhash = await connection.getLatestBlockhash();
+      await connection.confirmTransaction({
+        signature,
+        blockhash: latestBlockhash.blockhash,
+        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+      });
       
       setTransactionSignature(signature);
       setCurrentStage('success');
@@ -176,13 +206,16 @@ const Stake = () => {
   // Render input form
   const renderInputForm = () => (
     <div className="stake-form">
-      <div className="stake-header">
-        <h2>Stake SOL with Solayer</h2>
-        <p className="stake-description">
-          Stake your SOL tokens to earn yield through Solayer's liquid staking protocol
-        </p>
+      <div className="outer-input-label-row">
+        <div className="left-label">Amount to Stake</div>
+        <div className="balance-display">
+          Balance: <span className="balance-amount">{loadingBalance ? '...' : solBalance}</span>
+          {connected && solBalance !== '--' && parseFloat(solBalance) > 0 && (
+            <button onClick={handleUseMax} className="max-button">MAX</button>
+          )}
+        </div>
       </div>
-
+      
       <div className="input-container">
         <div className="amount-container">
           <input
@@ -191,23 +224,12 @@ const Stake = () => {
             value={amountToStake}
             onChange={handleAmountChange}
             placeholder="0"
-            disabled={!connected}
+            disabled={!connected || isLoading}
           />
           <div className="token-display">
             <img src="/tokens/solana-logo.svg" alt="SOL" className="token-icon" />
             <span>SOL</span>
           </div>
-        </div>
-
-        <div className="balance-info">
-          <span>Balance: {loadingBalance ? 'Loading...' : solBalance} SOL</span>
-          <button 
-            className="max-button" 
-            onClick={handleUseMax}
-            disabled={!connected || solBalance === '--' || parseFloat(solBalance) <= 0}
-          >
-            MAX
-          </button>
         </div>
       </div>
 
@@ -229,9 +251,22 @@ const Stake = () => {
       <button 
         className="stake-button" 
         onClick={handleStake}
-        disabled={!connected || isLoading || !amountToStake || parseFloat(amountToStake) <= 0 || parseFloat(solBalance) < parseFloat(amountToStake)}
+        disabled={
+          !connected || 
+          isLoading || 
+          !amountToStake || 
+          parseFloat(amountToStake) <= 0 || 
+          (solBalance !== '--' && parseFloat(solBalance) < parseFloat(amountToStake) && !(parseFloat(amountToStake) - parseFloat(solBalance) < 0.001))
+        }
       >
-        {isLoading ? 'Staking...' : 'Stake SOL'}
+        {!connected 
+          ? 'Connect Wallet' 
+          : isLoading 
+            ? 'Staking...' 
+            : (solBalance !== '--' && parseFloat(solBalance) < parseFloat(amountToStake) && !(parseFloat(amountToStake) - parseFloat(solBalance) < 0.001))
+              ? 'Insufficient SOL balance'
+              : 'Stake SOL'
+        }
       </button>
 
       {error && <div className="error-message">{error}</div>}

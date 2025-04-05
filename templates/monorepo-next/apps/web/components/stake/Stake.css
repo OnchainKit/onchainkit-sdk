@@ -44,6 +44,30 @@
   border-color: #3182ce;
 }
 
+.outer-input-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.left-label {
+  font-weight: 500;
+  color: #2d3748;
+  font-size: 0.95rem;
+}
+
+.balance-display {
+  display: flex;
+  align-items: center;
+  color: #718096;
+  font-size: 0.85rem;
+}
+
+.balance-amount {
+  margin: 0 4px;
+}
+
 .amount-container {
   display: flex;
   align-items: center;
