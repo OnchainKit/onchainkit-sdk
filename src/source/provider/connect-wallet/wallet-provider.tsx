@@ -8,7 +8,6 @@ import {
 } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-wallets";
-import { clusterApiUrl, Connection } from "@solana/web3.js";
 import "@solana/wallet-adapter-react-ui/styles.css";
 
 // Create wrapper components
@@ -51,10 +50,7 @@ export const WalletProvider = ({ children, ...props }: WalletProviderProps) => {
   
   // List of public RPC endpoints
   const publicRPCs = useMemo(() => [
-    "https://api-mainnet-beta.solflare.network", // Solflare RPC - works well with browser
-    "https://solana-mainnet.g.alchemy.com/v2/demo", // Alchemy Demo endpoint - good CORS support
-    "https://rpc.ankr.com/solana", // Ankr's endpoint - also has CORS support
-    "https://api.mainnet-beta.solana.com", // Solana Foundation (fallback only)
+    "https://solana-mainnet.g.alchemy.com/v2/fc0topeseIhDXBFfSMhpvcfyqDB8hXyn",
   ], []);
   
   const defaultNetwork = useMemo(() => props.network || "mainnet-beta", [props.network]);
@@ -99,4 +95,4 @@ export const WalletProvider = ({ children, ...props }: WalletProviderProps) => {
       </WalletProviderWrapper>
     </ConnectionProviderWrapper>
   );
-}; 
+};

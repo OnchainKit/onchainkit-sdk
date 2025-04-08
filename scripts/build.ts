@@ -1,13 +1,13 @@
-const { execSync } = require('child_process');
-const fs = require('fs-extra');
-const path = require('path');
+import { execSync } from 'child_process';
+import fs from 'fs-extra';
+import path from 'path';
 
-const rootDir = path.resolve(__dirname, '..');
-const distDir = path.join(rootDir, 'dist');
-const templatesDir = path.join(rootDir, 'templates');
-const distTemplatesDir = path.join(distDir, 'templates');
+const rootDir: string = path.resolve(__dirname, '..');
+const distDir: string = path.join(rootDir, 'dist');
+const templatesDir: string = path.join(rootDir, 'templates');
+const distTemplatesDir: string = path.join(distDir, 'templates');
 
-function runCommand(command) {
+function runCommand(command: string): void {
   console.log(`Running: ${command}`);
   execSync(command, { stdio: 'inherit', cwd: rootDir });
 }
@@ -35,16 +35,16 @@ try {
 }
 
 console.log('Setting CLI permissions...');
-const cliPath = path.join(distDir, 'cli', 'index.js');
+const cliPath: string = path.join(distDir, 'cli', 'index.js');
 if (fs.existsSync(cliPath)) {
   fs.chmodSync(cliPath, '755');
 }
 
 console.log('Copying feature configuration files...');
-const featuresDir = path.join(rootDir, 'src', 'features');
-const distFeaturesDir = path.join(distDir, 'features');
+const featuresDir: string = path.join(rootDir, 'src', 'features');
+const distFeaturesDir: string = path.join(distDir, 'features');
 if (fs.existsSync(featuresDir)) {
   fs.copySync(featuresDir, distFeaturesDir);
 }
 
-console.log('Build completed successfully!');
+console.log('Build completed successfully!'); 

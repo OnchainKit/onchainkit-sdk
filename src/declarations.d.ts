@@ -71,12 +71,23 @@ declare module 'clsx' {
 /**
  * Module type declarations
  */
-declare module 'swap';
+declare module 'swap' {
+  export interface Config {
+    JUPITER_REFERRAL_ACCOUNT?: string;
+    JUPITER_FEE_BPS?: number;
+  }
+}
+
 declare module 'stake';
 
 // Tạo thêm alias modules để giữ cho TypeScript vui vẻ
 declare global {
-  type SwapModule = unknown;
+  type SwapModule = {
+    Config: {
+      JUPITER_REFERRAL_ACCOUNT?: string;
+      JUPITER_FEE_BPS?: number;
+    }
+  };
   type StakeModule = unknown;
 }
 

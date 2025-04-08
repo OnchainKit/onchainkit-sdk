@@ -20,7 +20,8 @@
     "typeRoots": ["./node_modules/@types", "src/source/types"],
     "baseUrl": ".",
     "paths": {
-      "@onchainkit/source/*": ["src/source/*"]
+      "@onchainkit/source/*": ["src/source/*"],
+      "swap": ["src/source/types/swap"]
     }
   },
   "include": ["src/**/*"],

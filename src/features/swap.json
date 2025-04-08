@@ -22,8 +22,8 @@
       "target": "utils/swap"
     },
     {
-      "source": "source/types/swap",
-      "target": "types/swap"
+      "source": "source/types",
+      "target": "types"
     },
     {
       "source": "source/constants",

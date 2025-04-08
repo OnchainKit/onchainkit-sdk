@@ -23,7 +23,7 @@
   padding: 0 20px;
 }
 
-.swap-wrapper, .stake-wrapper, .mint-nft-wrapper {
+.swap-wrapper, .stake-wrapper, .create-collection-wrapper, .mint-nft-wrapper, .get-nft-wrapper {
   width: 100%;
   max-width: 480px;
   display: flex;
@@ -75,15 +75,15 @@
 
 @media (min-width: 1200px) {
   .content-container {
-    flex-direction: row;
+    flex-direction: column;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     gap: 60px;
   }
   
   .nft-tools-content {
-    flex-direction: row;
+    flex-direction: column;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
   }
 }

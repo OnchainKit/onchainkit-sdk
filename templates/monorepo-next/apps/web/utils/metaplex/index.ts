@@ -33,16 +33,16 @@ export async function createCollection(
   }
 ): Promise<CreateCollectionResponse> {
   try {
-    // Tạo instance UMI
+    // Create UMI instance
     const umi = createUmi(connection.rpcEndpoint).use(mplCore());
     
-    // Sử dụng wallet adapter thay vì keypair trực tiếp
+    // Use wallet adapter instead of direct keypair
     umi.use(walletAdapterIdentity(wallet));
 
-    // Tạo signer mới cho Collection NFT
+    // Create a new signer for Collection NFT
     const collectionMint = generateSigner(umi);
 
-    // Tạo Collection NFT sử dụng API create
+    // Create Collection NFT using the create API
     const tx = create(umi, {
       asset: collectionMint,
       name: collectionData.name,
@@ -60,7 +60,7 @@ export async function createCollection(
     };
   } catch (error: any) {
     console.error("Create Collection error:", error);
-    throw new Error(`Tạo Collection thất bại: ${error.message}`);
+    throw new Error(`Create Collection failed: ${error.message}`);
   }
 }
 
@@ -75,22 +75,16 @@ export async function mintNFT(
   recipient?: PublicKey,
 ): Promise<MintNFTResponse> {
   try {
-    // Tạo instance UMI
     const umi = createUmi(connection.rpcEndpoint).use(mplCore());
     
-    // Sử dụng wallet adapter thay vì keypair trực tiếp
     umi.use(walletAdapterIdentity(wallet));
 
-    // Chuyển đổi collection mint sang định dạng UMI
     const umiCollectionMint = fromWeb3JsPublicKey(collectionMint);
 
-    // Lấy thông tin collection
     const collection = await fetchCollection(umi, umiCollectionMint);
-
-    // Tạo signer mới cho NFT
+    
     const assetSigner = generateSigner(umi);
 
-    // Tạo NFT trong collection
     const tx = create(umi, {
       asset: assetSigner,
       collection: collection,
@@ -110,7 +104,7 @@ export async function mintNFT(
     };
   } catch (error: any) {
     console.error("Mint NFT error:", error);
-    throw new Error(`Mint NFT thất bại: ${error.message}`);
+    throw new Error(`Mint NFT failed: ${error.message}`);
   }
 }
 
@@ -119,11 +113,10 @@ export async function getNFT(
   assetId: string
 ) {
   try {
-    // Sử dụng phương thức DAS RPC trực tiếp từ connection
     const response = await connection.getAccountInfo(new PublicKey(assetId));
     
     if (!response) {
-      throw new Error('Không tìm thấy NFT');
+      throw new Error('NFT not found');
     }
     
     return {
@@ -134,6 +127,6 @@ export async function getNFT(
     };
   } catch (error: any) {
     console.error("Get NFT error:", error);
-    throw new Error(`Không thể lấy thông tin NFT: ${error.message}`);
+    throw new Error(`Unable to retrieve NFT information: ${error.message}`);
   }
-} 
+}

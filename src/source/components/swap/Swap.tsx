@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import './Swap.css';
 import { useJupiterTrade } from '../../utils/swap/swap';
 import { TOKENS } from '../../constants';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { ModalContext } from '../../provider/connect-wallet/wallet-provider';
 
 // Token icons
 const TOKEN_ICONS = {
@@ -38,7 +39,7 @@ const Swap = () => {
   
   const { executeTrade, getQuote, getBalance } = useJupiterTrade();
   const { connected, publicKey } = useWallet();
-
+  
   // Map token symbols to PublicKey
   const tokenMap = {
     SOL: TOKENS.SOL,

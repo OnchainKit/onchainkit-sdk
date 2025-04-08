@@ -12,6 +12,10 @@
     {
       "source": "source/components/stake",
       "target": "components/stake"
+    },
+    {
+      "source": "source/api",
+      "target": "app/api"
     }
   ]
 }

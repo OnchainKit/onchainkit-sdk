@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useContext } from 'react';
 import './Stake.css';
 import { useWallet } from '@solana/wallet-adapter-react';

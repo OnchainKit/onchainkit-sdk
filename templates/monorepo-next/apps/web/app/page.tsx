@@ -8,13 +8,11 @@ import './page.css';
 import SwapComponent from '../components/swap/Swap';
 import StakeComponent from '../components/stake/Stake';
 
-// Dynamic import các component liên quan đến Wallet để tránh lỗi hydration
 const ConnectWallet = dynamic(
   () => import('../components/connect-wallet/connect-wallet'),
   { ssr: false }
 );
 
-// Dynamic import các component NFT
 const MintNFT = dynamic(
   () => import('../components/nft').then((mod) => mod.MintNFT),
   { ssr: false }
@@ -33,7 +31,6 @@ const CreateCollection = dynamic(
 export default function Home() {
   const [collectionMint, setCollectionMint] = useState('');
 
-  // Xử lý khi collection được tạo
   const handleCollectionCreated = (mintAddress: string) => {
     setCollectionMint(mintAddress);
   };
@@ -51,6 +48,9 @@ export default function Home() {
           </div>
           <div className="stake-wrapper">
             <StakeComponent />
+          </div>
+          <div className="create-collection-wrapper">
+            <CreateCollection />
           </div>
           <div className="mint-nft-wrapper">
             <MintNFT collectionMint={collectionMint} />
